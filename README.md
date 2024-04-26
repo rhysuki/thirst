@@ -1,8 +1,6 @@
 # thirst
 A wrapper around [bjornbyte's Lust](https://github.com/bjornbytes/lust/) that removes as much of the slog of writing tests as possible.
 
-[From eev.ee](https://eev.ee/blog/2016/08/22/testing-for-people-who-hate-testing/):
-> If you hate your test harness, you will never enjoy writing tests. It'll always be a slog, and you'll avoid it whenever you can.
 # Usage
 Download this repository, then move the `thirst` folder to your project. `require` it.
 
