@@ -1,20 +1,40 @@
 local lust = require("thirst.thirst2")
 print("up'n'running")
 
-lust.auto_section("test")
-lust.it2("haaa", {lust.test_equals(1, 1)})
+lust.section("test")
+lust.it("haaa", {lust.test_equals(1, 0)})
+lust.it("haaa", {lust.test_equals(1, 0)})
+lust.it("haaa", {lust.test_equals(1, 0)})
+lust.it("haaa", {lust.test_equals(1, 0)})
+lust.it("haaa", {lust.test_equals(1, 0)})
+lust.it("haaa", {lust.test_equals(1, 0)})
 
 lust.push_section("top!")
 
-lust.auto_section("test")
-lust.it2("haaa", {lust.test_equals(1, 1)})
+lust.section("test")
+lust.it("haaa", {lust.test_equals(1, 1)})
+lust.it("haaa", {lust.test_equals(1, 1)})
+lust.it("haaa", {lust.test_equals(1, 1)})
+lust.it("haaa", {lust.test_equals(1, 1)})
+lust.it("haaa", {lust.test_equals(1, 1)})
+lust.it("haaa", {lust.test_equals(1, 1)})
+lust.it("haaa", {lust.test_equals(1, 1)})
+lust.it("haaa", {lust.test_equals(1, 1)})
+lust.it("haaa", {lust.test_equals(1, 1)})
+lust.it("haaa", {lust.test_equals(1, 1)})
+lust.it("haaa", {lust.test_equals(1, 1)})
+lust.it("haaa", {lust.test_equals(1, 1)})
+lust.it("haaa", {lust.test_equals(1, 1)})
+lust.it("haaa", {lust.test_equals(1, 1)})
 
-lust.auto_section("test")
-lust.it2("haaa", {lust.test_equals(1, 1)})
+lust.section("test")
+lust.it("haaa", {lust.test_equals(1, 1)})
 
 lust.pop_section()
 
-lust.it2("FFFFF", {lust.test_equals(1, 1)})
+lust.it("FFFFF", {lust.test_equals(1, 1)})
+
+lust.finish()
 --[[
 lust.push_section("top")
 

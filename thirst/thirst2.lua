@@ -1,245 +1,173 @@
 --#region INIT
-local lust = {}
-lust.level = 0
-lust.passes = 0
-lust.errors = 0
-lust.befores = {}
-lust.afters = {}
-lust.tests = {}
-local red = string.char(27) .. '[31m'
-local green = string.char(27) .. '[32m'
-local normal = string.char(27) .. '[0m'
+local lust = {
+	---If `true`, uses ANSI color codes for text when printing test results.
+	---If your console doesn't support color codes, switching this off will make
+	---all text print in the default color.
+	is_color_enabled = true,
+	---If `true`, the rundown of passes, fails and coverage printed on `finish()`
+	---will have a colored progress bar representing the coverage.
+	is_coverage_bar_enabled = true,
+	---If `true`, the result of each test will be printed when it's executed.
+	is_printing_enabled = true,
+	---If `true`, a list of all errors that occurred while testing will be printed
+	---when calling `finish()`, at the bottom of the results section.
+	is_print_errors_on_finish_enabled = true,
+	level = 0,
+	passes = 0,
+	errors = 0,
+	before_functions = {},
+	after_functions = {},
+	errorring_tests = {},
+	---`true` if the last used section was an automatic section; If `true`, we should
+	---automatically clean up the last pushed section when starting a new one.
+	is_inside_auto_section = false,
+}
+local red = string.char(27) .. "[31m"
+local green = string.char(27) .. "[32m"
+local white = string.char(27) .. "[0m"
 --#endregion
 
 --#region LOCAL FUNCTIONS & ASSERTIONS
-local function indent(level)
-	return string.rep('\t', level or lust.level)
+
+---Get `amount` amount of tab strings in a row, or `lust.level` tabs by default.
+---@param amount integer?
+---@return string
+local function get_indent(amount)
+	return string.rep("\t", amount or lust.level)
 end
 
-local function get_source_line()
-	return debug.traceback('', 3):match('%s([^%s]+%.lua:%d+:)')
-end
-
-local function isa(v, x)
-	if type(x) == 'string' then
-		return type(v) == x,
-			'expected ' .. tostring(v) .. ' to be a ' .. x,
-			'expected ' .. tostring(v) .. ' to not be a ' .. x
-	elseif type(x) == 'table' then
-		if type(v) ~= 'table' then
-			return false,
-				'expected ' .. tostring(v) .. ' to be a ' .. tostring(x),
-				'expected ' .. tostring(v) .. ' to not be a ' .. tostring(x)
-		end
-
-		local seen = {}
-		local meta = v
-		while meta and not seen[meta] do
-			if meta == x then return true end
-			seen[meta] = true
-			meta = getmetatable(meta) and getmetatable(meta).__index
-		end
-
-		return false,
-			'expected ' .. tostring(v) .. ' to be a ' .. tostring(x),
-			'expected ' .. tostring(v) .. ' to not be a ' .. tostring(x)
+---If `is_color_enabled`, return a color-coded version of `text`, in the given color,
+---with ANSI color codes.
+---If it's disabled, return the text in the default color.
+---@param color string
+---@param text string
+---@return string
+local function get_colored_text(color, text)
+	if not lust.is_color_enabled then
+		color = white
 	end
 
-	error('invalid type ' .. tostring(x))
+	return color .. text .. white
 end
 
-local function has(t, x)
-	for k, v in pairs(t) do
-		if v == x then return true end
-	end
-	return false
-end
-
-local function strict_eq(t1, t2)
-	if type(t1) ~= type(t2) then return false end
-	if type(t1) ~= 'table' then return t1 == t2 end
-	for k, _ in pairs(t1) do
-		if not strict_eq(t1[k], t2[k]) then return false end
-	end
-	for k, _ in pairs(t2) do
-		if not strict_eq(t2[k], t1[k]) then return false end
-	end
-	return true
-end
-
-local paths = {
-	[''] = {'to', 'to_not'},
-	to = {'have', 'equal', 'be', 'exist', 'fail', 'match'},
-	to_not = {'have', 'equal', 'be', 'exist', 'fail', 'match', chain = function(a) a.negate = not a.negate end},
-	a = {test = isa},
-	an = {test = isa},
-	be = {
-		'a',
-		'an',
-		'truthy',
-		test = function(v, x)
-			return v == x,
-				'expected ' .. tostring(v) .. ' and ' .. tostring(x) .. ' to be equal',
-				'expected ' .. tostring(v) .. ' and ' .. tostring(x) .. ' to not be equal'
-		end
-	},
-	exist = {
-		test = function(v)
-			return v ~= nil,
-				'expected ' .. tostring(v) .. ' to exist',
-				'expected ' .. tostring(v) .. ' to not exist'
-		end
-	},
-	truthy = {
-		test = function(v)
-			return v,
-				'expected ' .. tostring(v) .. ' to be truthy',
-				'expected ' .. tostring(v) .. ' to not be truthy'
-		end
-	},
-	equal = {
-		test = function(v, x)
-			return strict_eq(v, x),
-				'expected ' .. tostring(v) .. ' and ' .. tostring(x) .. ' to be exactly equal',
-				'expected ' .. tostring(v) .. ' and ' .. tostring(x) .. ' to not be exactly equal'
-		end
-	},
-	have = {
-		test = function(v, x)
-			if type(v) ~= 'table' then
-				error('expected ' .. tostring(v) .. ' to be a table')
-			end
-
-			return has(v, x),
-				'expected ' .. tostring(v) .. ' to contain ' .. tostring(x),
-				'expected ' .. tostring(v) .. ' to not contain ' .. tostring(x)
-		end
-	},
-	fail = {
-		test = function(v)
-			return not pcall(v),
-				'expected ' .. tostring(v) .. ' to fail',
-				'expected ' .. tostring(v) .. ' to not fail'
-		end
-	},
-	match = {
-		test = function(v, p)
-			if type(v) ~= 'string' then v = tostring(v) end
-			local result = string.find(v, p)
-			return result ~= nil,
-				'expected ' .. v .. ' to match pattern [[' .. p .. ']]',
-				'expected ' .. v .. ' to not match pattern [[' .. p .. ']]'
-		end
-	},
-}
-
-lust.test = lust.it
-lust.paths = paths
---#endregion
-
---#region API
-function lust.nocolor()
-	red, green, normal = '', '', ''
-	return lust
-end
-
-function lust.describe(name, fn)
-	-- pre-describe
-	print(indent() .. name)
-	lust.level = lust.level + 1
-	fn()
-	-- post-describe
-	lust.befores[lust.level] = {}
-	lust.afters[lust.level] = {}
-	lust.level = lust.level - 1
-end
-
-function lust.it(name, fn)
-	for level = 1, lust.level do
-		if lust.befores[level] then
-			for i = 1, #lust.befores[level] do
-				lust.befores[level][i](name)
-			end
-		end
-	end
-
-	-- start test
-	local success, err = pcall(fn)
-	if success then
-		lust.passes = lust.passes + 1
-	else
-		lust.errors = lust.errors + 1
-	end
-	local color = success and green or red
-	local label = success and 'PASS' or 'FAIL'
-	print(indent() .. color .. label .. normal .. ' ' .. name)
-	if err then
-		print(indent(lust.level + 1) .. red .. tostring(err) .. normal)
-	end
-	-- end test
-
-	for level = 1, lust.level do
-		if lust.afters[level] then
-			for i = 1, #lust.afters[level] do
-				lust.afters[level][i](name)
-			end
-		end
-	end
-end
-
----@return table
-function lust.test_equals(a, b)
-	return {
-		success = a == b,
-		error_message = ("expected %d and %d to be equal."):format(a, b),
-		source_line = get_source_line(),
-	}
-end
-
-local is_inside_auto_section = false
-
+---If we're inside an auto section, call pertinent functions to finish it, like
+---popping it out of the stack. Otherwise, nothing happens.
 local function clean_up_auto_section()
-	if is_inside_auto_section then
+	if lust.is_inside_auto_section then
 		lust.pop_section()
 	end
 end
 
-function lust.auto_section(name)
-	clean_up_auto_section()
-	lust.push_section(name)
-	is_inside_auto_section = true
+---If any of the tests inside `tests` failed, return `false` and a table containing
+---only the errorring tests. Otherwise, return `true` and an empty table.
+---@param tests table
+---@return boolean, table
+local function check_tests(tests)
+	local erroring_tests = {}
+
+	for _, test in ipairs(tests) do
+		if not test.success then table.insert(erroring_tests, test) end
+	end
+
+	return #erroring_tests == 0, erroring_tests
 end
 
+--#endregion
+
+--#region API
+
+function lust.test_equals(a, b)
+	return {
+		success = a == b,
+		error_message = ("expected %d and %d to be equal."):format(a, b),
+		source_line = debug.traceback("", 2):match("%s([^%s]+%.lua:%d+:)"),
+	}
+end
+
+---Create a group of tests that's automatically ended and cleaned up when the
+---next one starts, or when you manually end it with `pop_section()`.
+---@param name string
+function lust.section(name)
+	clean_up_auto_section()
+	lust.push_section(name)
+	lust.is_inside_auto_section = true
+end
+
+---Begin a new group of tests. `it()` calls after this function will be nested inside this
+---section, with one level higher of indentation.
+---You can nest sections by calling this function more than once.
 function lust.push_section(name)
 	clean_up_auto_section()
-	print(indent() .. name)
+	print(get_indent() .. name)
 	lust.level = lust.level + 1
 end
 
+---End the current section, clean up before and after functions, and move back to the
+---previous section.
 function lust.pop_section()
-	lust.befores[lust.level] = {}
-	lust.afters[lust.level] = {}
+	lust.before_functions[lust.level] = {}
+	lust.after_functions[lust.level] = {}
 	lust.level = math.max(lust.level - 1, 0)
-	is_inside_auto_section = false
+	lust.is_inside_auto_section = false
 end
 
-function lust.it2(name, assertions)
+---Pop all active sections, clean up internal state, and print some info about
+---the entirety of the test suite so far.
+function lust.finish()
+	while lust.level > 0 do
+		lust.pop_section()
+	end
+
+	local size = 30
+
+	print(string.rep("=", size))
+
+	local coverage = lust.passes / (lust.passes + lust.errors)
+
+	print(("PASSES: %i\nFAILS: %i"):format(
+		lust.passes,
+		lust.errors
+	))
+
+	if lust.is_print_errors_on_finish_enabled then
+		print()
+
+		for _, test in ipairs(lust.errorring_tests) do
+			print(get_colored_text(red, ("On '%s': %s %s"):format(
+				test.it_name,
+				test.source_line,
+				test.error_message
+			)))
+		end
+
+		print()
+	end
+
+	print(("Coverage: %.1f%%"):format(coverage * 100))
+
+	if lust.is_coverage_bar_enabled then
+		print(
+			"["
+			.. get_colored_text(green, string.rep("+", (size - 2) * coverage))
+			.. get_colored_text(red, string.rep("-", (size - 2) * (1 - coverage)))
+			.. "]"
+		)
+	end
+
+
+	print(string.rep("=", size))
+end
+
+function lust.it(name, tests)
 	for level = 1, lust.level do
-		if lust.befores[level] then
-			for i = 1, #lust.befores[level] do
-				lust.befores[level][i](name)
+		if lust.before_functions[level] then
+			for i = 1, #lust.before_functions[level] do
+				lust.before_functions[level][i](name)
 			end
 		end
 	end
 
-	-- start test
-	local erroring_tests = {}
-
-	for _, test in ipairs(assertions) do
-		if not test.success then table.insert(erroring_tests, test) end
-	end
-
-	local success = #erroring_tests == 0
+	local success, erroring_tests = check_tests(tests)
 
 	if success then
 		lust.passes = lust.passes + 1
@@ -247,68 +175,56 @@ function lust.it2(name, assertions)
 		lust.errors = lust.errors + 1
 	end
 
-	local color = success and green or red
-	local label = success and "[PASS]" or "[FAIL]"
+	if lust.is_printing_enabled then
+		local color = success and green or red
+		local label = success and "[PASS]" or "[FAIL]"
 
-	print(indent() .. color .. label .. normal .. " " .. name)
+		print(get_indent() .. get_colored_text(color, label) .. " " .. name)
+
+		for _, test in ipairs(erroring_tests) do
+			print(get_indent(lust.level + 1) .. test.source_line .. " " .. test.error_message)
+		end
+	end
 
 	for _, test in ipairs(erroring_tests) do
-		print(indent(lust.level + 1) .. test.source_line .. ' ' .. test.error_message)
+		test.it_name = name
+		table.insert(lust.errorring_tests, test)
 	end
-	-- end test
 
 	for level = 1, lust.level do
-		if lust.afters[level] then
-			for i = 1, #lust.afters[level] do
-				lust.afters[level][i](name)
+		if lust.after_functions[level] then
+			for i = 1, #lust.after_functions[level] do
+				lust.after_functions[level][i](name)
 			end
 		end
 	end
 end
 
+---Add `fn` to be called before every `it` call in the current section and all
+---sections nested inside it.
+---@param fn function
 function lust.before(fn)
-	lust.befores[lust.level] = lust.befores[lust.level] or {}
-	table.insert(lust.befores[lust.level], fn)
+	lust.before_functions[lust.level] = lust.before_functions[lust.level] or {}
+	table.insert(lust.before_functions[lust.level], fn)
 end
 
+---Add `fn` to be called before after `it` call in the current section and all
+---sections inside it.
+---@param fn function
 function lust.after(fn)
-	lust.afters[lust.level] = lust.afters[lust.level] or {}
-	table.insert(lust.afters[lust.level], fn)
+	lust.after_functions[lust.level] = lust.after_functions[lust.level] or {}
+	table.insert(lust.after_functions[lust.level], fn)
 end
 
-function lust.expect(v)
-	local assertion = {}
-	assertion.val = v
-	assertion.action = ''
-	assertion.negate = false
-
-	setmetatable(assertion, {
-		__index = function(t, k)
-			if has(paths[rawget(t, 'action')], k) then
-				rawset(t, 'action', k)
-				local chain = paths[rawget(t, 'action')].chain
-				if chain then chain(t) end
-				return t
-			end
-			return rawget(t, k)
-		end,
-		__call = function(t, ...)
-			if paths[t.action].test then
-				local res, err, nerr = paths[t.action].test(t.val, ...)
-				if assertion.negate then
-					res = not res
-					err = nerr or err
-				end
-				if not res then
-					error(err or 'unknown failure', 2)
-				end
-			end
-		end
-	})
-
-	return assertion
-end
-
+---Watch a function to track the number of times it was called, and the arguments
+---it was called with. This returns a table containing one table for every time the
+---function was called, with the arguements used inside it.
+---
+---I'll be honest, I don't really understand this one. Please check the lust docs
+---for further examples.
+---
+---https://github.com/bjornbytes/lust?tab=readme-ov-file#spies
+---@return table
 function lust.spy(target, name, run)
 	local spy = {}
 	local subject
