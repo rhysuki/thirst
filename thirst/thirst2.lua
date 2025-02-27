@@ -25,6 +25,7 @@ local lust = {
 	before_functions = {},
 	after_functions = {},
 	errorring_tests = {},
+	expect = require("thirst.assertions"),
 	---`true` if the last used section was an automatic section; If `true`, we should
 	---automatically clean up the last pushed section when starting a new one.
 	is_inside_auto_section = false,
@@ -77,24 +78,6 @@ local function check_tests(tests)
 	end
 
 	return #erroring_tests == 0, erroring_tests
-end
-
----Return the filename and line number of the function that called this.
----@return string
-local function get_source_line()
-	return debug.traceback("", 3):match("%s([^%s]+%.lua:%d+:)")
-end
-
----@param success boolean
----@param error_message string
----@return Test
-local function create_test(success, error_message)
-	return {
-		success = success,
-		error_message = error_message,
-		source_line = get_source_line(),
-		it_name = "",
-	}
 end
 
 --#endregion
@@ -265,31 +248,6 @@ function lust.spy(target, name, run)
 
 	return spy
 end
-
---#endregion
-
---#region TESTS
-local expect = {}
-
----Succeeds if `a == b`.
----@return Test
-function expect.equals(a, b)
-	return create_test(
-		a == b,
-		("Expected %s and %s to be equal."):format(a, b)
-	)
-end
-
----Succeeds if `a ~= b`.
----@return Test
-function expect.not_equal(a, b)
-	return create_test(
-		a ~= b,
-		("Expected %s and %s to be different."):format(a, b)
-	)
-end
-
-lust.expect = expect
 
 --#endregion
 

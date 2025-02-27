@@ -1,9 +1,11 @@
 local lust = require("thirst.thirst2")
+local expect = lust.expect
 print("up'n'running")
 
 lust.it("test", {
-	lust.expect.equals(1, 1),
-	lust.expect.not_equal(1, 1)
+	expect.equals(1, 1),
+	expect.in_between(3, 5, 20),
+	expect.function_works(function() error(":( fuck my puppy life......no wet food") end)
 })
 
 -- lust.finish()
