@@ -1,4 +1,11 @@
 --#region INIT
+
+---@class (exact) Test
+---@field success boolean `true` if this Test ran with no errors.
+---@field error_message string The error message that'll be displayed if this Test fails.
+---@field source_line string The filename and line number this Test was created in.
+---@field it_name string The name of the `it()` block this Test belongs to. Gets set in `it()` calls.
+
 local lust = {
 	---If `true`, uses ANSI color codes for text when printing test results.
 	---If your console doesn't support color codes, switching this off will make
@@ -72,17 +79,27 @@ local function check_tests(tests)
 	return #erroring_tests == 0, erroring_tests
 end
 
+---Return the filename and line number of the function that called this.
+---@return string
+local function get_source_line()
+	return debug.traceback("", 3):match("%s([^%s]+%.lua:%d+:)")
+end
+
+---@param success boolean
+---@param error_message string
+---@return Test
+local function create_test(success, error_message)
+	return {
+		success = success,
+		error_message = error_message,
+		source_line = get_source_line(),
+		it_name = "",
+	}
+end
+
 --#endregion
 
 --#region API
-
-function lust.test_equals(a, b)
-	return {
-		success = a == b,
-		error_message = ("expected %d and %d to be equal."):format(a, b),
-		source_line = debug.traceback("", 2):match("%s([^%s]+%.lua:%d+:)"),
-	}
-end
 
 ---Create a group of tests that's automatically ended and cleaned up when the
 ---next one starts, or when you manually end it with `pop_section()`.
@@ -248,6 +265,31 @@ function lust.spy(target, name, run)
 
 	return spy
 end
+
+--#endregion
+
+--#region TESTS
+local expect = {}
+
+---Succeeds if `a == b`.
+---@return Test
+function expect.equals(a, b)
+	return create_test(
+		a == b,
+		("Expected %s and %s to be equal."):format(a, b)
+	)
+end
+
+---Succeeds if `a ~= b`.
+---@return Test
+function expect.not_equal(a, b)
+	return create_test(
+		a ~= b,
+		("Expected %s and %s to be different."):format(a, b)
+	)
+end
+
+lust.expect = expect
 
 --#endregion
 
