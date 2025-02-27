@@ -34,8 +34,6 @@ thirst._name = ''
 thirst._red = string.char(27) .. '[31m'
 thirst._green = string.char(27) .. '[32m'
 thirst._normal = string.char(27) .. '[0m'
-thirst._pass = '[PASS]'
-thirst._fail = '[FAIL]'
 
 -- local functions --
 
@@ -75,7 +73,7 @@ function thirst._process_tests()
 
 	local success = is_empty(errors)
 	local color = success and thirst._green or thirst._red
-	local label = success and thirst._pass or thirst._fail
+	local label = success and "[PASS]" or "[FAIL]"
 
 	-- print outcome and errors, if any
 	print(thirst._indent() .. color .. label .. thirst._normal .. ' ' .. thirst._name)
@@ -84,8 +82,11 @@ function thirst._process_tests()
 		print(thirst._indent(lust.level + 1) .. test.source_line .. ' ' .. test.err)
 	end
 
-	if success then lust.passes = lust.passes + 1
-	else lust.errors = lust.errors + 1 end
+	if success then
+		lust.passes = lust.passes + 1
+	else
+		lust.errors = lust.errors + 1
+	end
 
 	-- call the "after" funcs for the current level and each one below
 	for level = 1, lust.level do
@@ -195,6 +196,7 @@ end
 	namely with a invert_test()/to_fail() call.
 --]]
 
+---test?
 function thirst.exists(a)
 	return thirst._new_assertion(
 		(a ~= nil),
