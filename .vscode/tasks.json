@@ -4,13 +4,22 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "run",
+			"label": "run lua",
 			"type": "shell",
-			"command": "lua thirst/test.lua",
+			"command": "lua thirst/init.lua",
 			"problemMatcher": [],
 			"group": {
 				"kind": "build",
 				"isDefault": true
+			}
+		},
+		{
+			"label": "run löve",
+			"type": "shell",
+			"command": "lovec .",
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
 			}
 		}
 	]
