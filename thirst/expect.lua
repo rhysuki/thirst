@@ -117,11 +117,11 @@ end
 ---@param ... any
 ---@return Thirst_Test
 function expect.function_fails(func, ...)
-	local success, err = pcall(func, ...)
+	local success = pcall(func, ...)
 
 	return create_test(
 		not success,
-		("Expected function to fail."):format(err or "")
+		("Expected function to fail.")
 	)
 end
 
@@ -141,7 +141,7 @@ function expect.contains(tab, value)
 
 	return create_test(
 		success,
-		("Couldn't find '%s' in table."):format(value)
+		("Couldn't find '%s' in table."):format(str(value))
 	)
 end
 
@@ -161,7 +161,7 @@ function expect.does_not_contain(tab, value)
 
 	return create_test(
 		success,
-		("Expected table to not contain '%s'."):format(value)
+		("Expected table to not contain '%s'."):format(str(value))
 	)
 end
 
