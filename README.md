@@ -9,6 +9,7 @@ The smoother it is to write tests, the more you'll want to do it, and the better
 </tr>
 <tr>
 <td>
+
 ```lua
 describe("module", function()
 	it("feature", function()
@@ -22,8 +23,10 @@ describe("module", function()
 	end)
 end)
 ```
+
 </td>
 <td>
+
 ```lua
 section("module")
 it("feature", {
@@ -35,9 +38,11 @@ it("other feature", {
 	expect.does_not_exist(unitialized_var)
 })
 ```
+
 </td>
 </tr>
 </table>
+
 # Usage
 Download the `/thirst` folder and `require` it.
 
