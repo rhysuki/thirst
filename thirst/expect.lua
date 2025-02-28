@@ -38,7 +38,7 @@ end
 ---@return Test
 function expect.fail()
 	return create_test(
-		true,
+		false,
 		"Fail!"
 	)
 end
