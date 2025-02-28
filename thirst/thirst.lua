@@ -1,12 +1,38 @@
---#region INIT
-
 ---@class (exact) Test
 ---@field success boolean `true` if this Test ran with no errors.
 ---@field error_message string The error message that'll be displayed if this Test fails.
 ---@field source_line string The filename and line number this Test was created in.
 ---@field it_name string The name of the `it()` block this Test belongs to. Gets set in `it()` calls.
 
-local lust = {
+local path = (...):gsub("thirst$", "")
+local thirst = {
+	_VERSION = "v0.2.0",
+	_DESCRIPTION = "Smooth unit testing for Lua",
+	_URL = "https://github.com/rhysuki/thirst",
+	_LICENSE = [[
+		MIT License
+
+		Copyright (c) 2025 rhysuki
+
+		Permission is hereby granted, free of charge, to any person obtaining a copy
+		of this software and associated documentation files (the "Software"), to deal
+		in the Software without restriction, including without limitation the rights
+		to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+		copies of the Software, and to permit persons to whom the Software is
+		furnished to do so, subject to the following conditions:
+
+		The above copyright notice and this permission notice shall be included in all
+		copies or substantial portions of the Software.
+
+		THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+		IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+		FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+		AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+		LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+		OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+		SOFTWARE.
+	]],
+
 	---If `true`, uses ANSI color codes for text when printing test results.
 	---If your console doesn't support color codes, switching this off will make
 	---all text print in the default color.
@@ -25,7 +51,8 @@ local lust = {
 	before_functions = {},
 	after_functions = {},
 	errorring_tests = {},
-	expect = require("thirst.assertions"),
+	---@type Expect
+	expect = require(path .. "expect"),
 	---`true` if the last used section was an automatic section; If `true`, we should
 	---automatically clean up the last pushed section when starting a new one.
 	is_inside_auto_section = false,
@@ -33,15 +60,14 @@ local lust = {
 local red = string.char(27) .. "[31m"
 local green = string.char(27) .. "[32m"
 local white = string.char(27) .. "[0m"
---#endregion
 
---#region LOCAL FUNCTIONS & ASSERTIONS
+--#region LOCAL FUNCTIONS
 
----Get `amount` amount of tab strings in a row, or `lust.level` tabs by default.
+---Get `amount` amount of tab strings in a row, or `thirst.level` tabs by default.
 ---@param amount integer?
 ---@return string
 local function get_indent(amount)
-	return string.rep("\t", amount or lust.level)
+	return string.rep("\t", amount or thirst.level)
 end
 
 ---If `is_color_enabled`, return a color-coded version of `text`, in the given color,
@@ -51,7 +77,7 @@ end
 ---@param text string
 ---@return string
 local function get_colored_text(color, text)
-	if not lust.is_color_enabled then
+	if not thirst.is_color_enabled then
 		return text
 	end
 
@@ -61,8 +87,8 @@ end
 ---If we're inside an auto section, call pertinent functions to finish it, like
 ---popping it out of the stack. Otherwise, nothing happens.
 local function clean_up_auto_section()
-	if lust.is_inside_auto_section then
-		lust.pop_section()
+	if thirst.is_inside_auto_section then
+		thirst.pop_section()
 	end
 end
 
@@ -80,60 +106,150 @@ local function check_tests(tests)
 	return #erroring_tests == 0, erroring_tests
 end
 
+---Recursively execute every Lua file inside `folder` and all nested folders, except
+---if they match the `exclude` pattern.
+---@param folder string
+---@param exclude? string
+local function run_folder(folder, exclude)
+	for _, name in ipairs(love.filesystem.getDirectoryItems(folder)) do
+		local path = folder .. "/" .. name
+		local file_type = love.filesystem.getInfo(path).type
+
+		if exclude and path:match(exclude) then
+			goto continue
+		end
+
+		if file_type == "file" and name:match(".lua$") then
+			assert(love.filesystem.load(path))()
+		else
+			thirst.run_folder(path)
+		end
+
+		::continue::
+	end
+end
+
 --#endregion
 
 --#region API
 
+---Run a new test (inside the current section, if any) and prints out results if
+---`is_printing_enabled` is `true`. Calls before-functions before and after-functions
+---after it runs.
+---@param name string
+---@param tests table
+function thirst.it(name, tests)
+	for level = 1, thirst.level do
+		if thirst.before_functions[level] then
+			for i = 1, #thirst.before_functions[level] do
+				thirst.before_functions[level][i](name)
+			end
+		end
+	end
+
+	local success, erroring_tests = check_tests(tests)
+
+	if success then
+		thirst.passes = thirst.passes + 1
+	else
+		thirst.errors = thirst.errors + 1
+	end
+
+	if thirst.is_printing_enabled then
+		local color = success and green or red
+		local label = success and "[PASS]" or "[FAIL]"
+
+		print(get_indent() .. get_colored_text(color, label) .. " " .. name)
+
+		for _, test in ipairs(erroring_tests) do
+			print(get_indent(thirst.level + 1) .. test.source_line .. " " .. test.error_message)
+		end
+	end
+
+	for _, test in ipairs(erroring_tests) do
+		test.it_name = name
+		table.insert(thirst.errorring_tests, test)
+	end
+
+	for level = 1, thirst.level do
+		if thirst.after_functions[level] then
+			for i = 1, #thirst.after_functions[level] do
+				thirst.after_functions[level][i](name)
+			end
+		end
+	end
+end
+
+---Add `fn` to be called before every `it` call in the current section and all
+---sections nested inside it.
+---@param fn function
+function thirst.before(fn)
+	thirst.before_functions[thirst.level] = thirst.before_functions[thirst.level] or {}
+	table.insert(thirst.before_functions[thirst.level], fn)
+end
+
+---Add `fn` to be called before after `it` call in the current section and all
+---sections inside it.
+---@param fn function
+function thirst.after(fn)
+	thirst.after_functions[thirst.level] = thirst.after_functions[thirst.level] or {}
+	table.insert(thirst.after_functions[thirst.level], fn)
+end
+
 ---Create a group of tests that's automatically ended and cleaned up when the
 ---next one starts, or when you manually end it with `pop_section()`.
 ---@param name string
-function lust.section(name)
+function thirst.section(name)
 	clean_up_auto_section()
-	lust.push_section(name)
-	lust.is_inside_auto_section = true
+	thirst.push_section(name)
+	thirst.is_inside_auto_section = true
 end
 
 ---Begin a new group of tests. `it()` calls after this function will be nested inside this
 ---section, with one level higher of indentation.
 ---You can nest sections by calling this function more than once.
-function lust.push_section(name)
+function thirst.push_section(name)
 	clean_up_auto_section()
 	print(get_indent() .. name)
-	lust.level = lust.level + 1
+	thirst.level = thirst.level + 1
 end
 
 ---End the current section, clean up before and after functions, and move back to the
 ---previous section.
-function lust.pop_section()
-	lust.before_functions[lust.level] = {}
-	lust.after_functions[lust.level] = {}
-	lust.level = math.max(lust.level - 1, 0)
-	lust.is_inside_auto_section = false
+function thirst.pop_section()
+	thirst.before_functions[thirst.level] = {}
+	thirst.after_functions[thirst.level] = {}
+	thirst.level = math.max(thirst.level - 1, 0)
+	thirst.is_inside_auto_section = false
 end
 
 ---Pop all active sections, clean up internal state, and print some info about
 ---the entirety of the test suite so far.
 ---This is automatically called at the end of `run_folder()`.
-function lust.finish()
-	while lust.level > 0 do
-		lust.pop_section()
+function thirst.finish()
+	while thirst.level > 0 do
+		thirst.pop_section()
 	end
 
 	local size = 30
 
 	print(string.rep("=", size))
 
-	local coverage = lust.passes / (lust.passes + lust.errors)
+	local coverage = thirst.passes / (thirst.passes + thirst.errors)
+
+	if thirst.passes + thirst.errors == 0 then
+		coverage = 0
+	end
 
 	print(("PASSES: %i\nFAILS: %i"):format(
-		lust.passes,
-		lust.errors
+		thirst.passes,
+		thirst.errors
 	))
 
-	if lust.is_print_errors_on_finish_enabled then
+	if thirst.is_print_errors_on_finish_enabled then
 		print()
 
-		for _, test in ipairs(lust.errorring_tests) do
+		for _, test in ipairs(thirst.errorring_tests) do
 			print(get_colored_text(red, ("On '%s': %s %s"):format(
 				test.it_name,
 				test.source_line,
@@ -146,7 +262,7 @@ function lust.finish()
 
 	print(("Coverage: %.1f%%"):format(coverage * 100))
 
-	if lust.is_coverage_bar_enabled then
+	if thirst.is_coverage_bar_enabled then
 		print(
 			"["
 			.. get_colored_text(green, string.rep("+", (size - 2) * coverage))
@@ -159,74 +275,16 @@ function lust.finish()
 	print(string.rep("=", size))
 end
 
-function lust.it(name, tests)
-	for level = 1, lust.level do
-		if lust.before_functions[level] then
-			for i = 1, #lust.before_functions[level] do
-				lust.before_functions[level][i](name)
-			end
-		end
-	end
-
-	local success, erroring_tests = check_tests(tests)
-
-	if success then
-		lust.passes = lust.passes + 1
-	else
-		lust.errors = lust.errors + 1
-	end
-
-	if lust.is_printing_enabled then
-		local color = success and green or red
-		local label = success and "[PASS]" or "[FAIL]"
-
-		print(get_indent() .. get_colored_text(color, label) .. " " .. name)
-
-		for _, test in ipairs(erroring_tests) do
-			print(get_indent(lust.level + 1) .. test.source_line .. " " .. test.error_message)
-		end
-	end
-
-	for _, test in ipairs(erroring_tests) do
-		test.it_name = name
-		table.insert(lust.errorring_tests, test)
-	end
-
-	for level = 1, lust.level do
-		if lust.after_functions[level] then
-			for i = 1, #lust.after_functions[level] do
-				lust.after_functions[level][i](name)
-			end
-		end
-	end
-end
-
----Add `fn` to be called before every `it` call in the current section and all
----sections nested inside it.
----@param fn function
-function lust.before(fn)
-	lust.before_functions[lust.level] = lust.before_functions[lust.level] or {}
-	table.insert(lust.before_functions[lust.level], fn)
-end
-
----Add `fn` to be called before after `it` call in the current section and all
----sections inside it.
----@param fn function
-function lust.after(fn)
-	lust.after_functions[lust.level] = lust.after_functions[lust.level] or {}
-	table.insert(lust.after_functions[lust.level], fn)
-end
-
 ---Watch a function to track the number of times it was called, and the arguments
 ---it was called with. This returns a table containing one table for every time the
 ---function was called, with the arguements used inside it.
 ---
----I'll be honest, I don't really understand this one. Please check the lust docs
+---I'll be honest, I don't really understand this one. Please check the Lust docs
 ---for further examples.
 ---
 ---https://github.com/bjornbytes/lust?tab=readme-ov-file#spies
 ---@return table
-function lust.spy(target, name, run)
+function thirst.spy(target, name, run)
 	local spy = {}
 	local subject
 
@@ -255,12 +313,14 @@ end
 ---way to run every test inside your `spec` folder, for instance.
 ---
 ---Requires LÖVE.
----@param path string The path to the folder. This gets passed to `love.filesystem.getDirectoryItems()`.
----@param exclude string? A Lua pattern. Filepaths that match this pattern will be skipped.
-function lust.run_folder(path, exclude)
+---@param folder string The path to the folder. This gets passed to `love.filesystem.getDirectoryItems()`.
+---@param exclude string? A Lua pattern. Paths that match this pattern will be skipped.
+function thirst.run_folder(folder, exclude)
 	assert(_G.love, "run_folder() needs to be run within a LÖVE game to work.")
+	run_folder(folder, exclude)
+	thirst.finish()
 end
 
 --#endregion
 
-return lust
+return thirst

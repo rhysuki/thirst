@@ -1,3 +1,4 @@
+---@class Expect
 local expect = {}
 
 local str = tostring
