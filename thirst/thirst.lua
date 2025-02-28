@@ -18,7 +18,7 @@ local lust = {
 	is_printing_enabled = true,
 	---If `true`, a list of all errors that occurred while testing will be printed
 	---when calling `finish()`, at the bottom of the results section.
-	is_print_errors_on_finish_enabled = true,
+	is_print_errors_on_finish_enabled = false,
 	level = 0,
 	passes = 0,
 	errors = 0,
@@ -52,7 +52,7 @@ end
 ---@return string
 local function get_colored_text(color, text)
 	if not lust.is_color_enabled then
-		color = white
+		return text
 	end
 
 	return color .. text .. white
@@ -113,6 +113,7 @@ end
 
 ---Pop all active sections, clean up internal state, and print some info about
 ---the entirety of the test suite so far.
+---This is automatically called at the end of `run_folder()`.
 function lust.finish()
 	while lust.level > 0 do
 		lust.pop_section()
@@ -247,6 +248,17 @@ function lust.spy(target, name, run)
 	if run then run() end
 
 	return spy
+end
+
+---Recursively execute every Lua file inside the given folder and all nested folders,
+---printing all results, then prints a rundown of the whole suite. This is the easiest
+---way to run every test inside your `spec` folder, for instance.
+---
+---Requires LÖVE.
+---@param path string The path to the folder. This gets passed to `love.filesystem.getDirectoryItems()`.
+---@param exclude string? A Lua pattern. Filepaths that match this pattern will be skipped.
+function lust.run_folder(path, exclude)
+	assert(_G.love, "run_folder() needs to be run within a LÖVE game to work.")
 end
 
 --#endregion

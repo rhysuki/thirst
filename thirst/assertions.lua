@@ -1,5 +1,7 @@
 local expect = {}
 
+local str = tostring
+
 ---@param success boolean
 ---@param error_message string
 ---@return Test
@@ -56,7 +58,7 @@ end
 function expect.does_not_exist(value)
 	return create_test(
 		value == nil,
-		("Expected value to be nil, but was '%s'."):format(value)
+		("Expected value to be nil, but was '%s'."):format(str(value))
 	)
 end
 
@@ -67,7 +69,7 @@ end
 function expect.equals(a, b)
 	return create_test(
 		a == b,
-		("Expected '%s' and '%s' to be equal."):format(a, b)
+		("Expected '%s' and '%s' to be equal."):format(str(a), str(b))
 	)
 end
 
@@ -78,7 +80,29 @@ end
 function expect.not_equal(a, b)
 	return create_test(
 		a ~= b,
-		("Expected '%s' and '%s' to be different."):format(a, b)
+		("Expected '%s' and '%s' to be different."):format(str(a), str(b))
+	)
+end
+
+---Succeeds if `type(a) == b`.
+---@param value any
+---@param type_name string
+---@return Test
+function expect.is_a(value, type_name)
+	return create_test(
+		type(value) == type_name,
+		("Expected '%s' to be a %s, but it was a %s."):format(str(value), type_name, type(value))
+	)
+end
+
+---Succeeds if `type(a) ~= b`.
+---@param value any
+---@param type_name string
+---@return Test
+function expect.is_not_a(value, type_name)
+	return create_test(
+		type(value) ~= type_name,
+		("Expected '%s' to not be a %s."):format(str(value), str(type_name))
 	)
 end
 

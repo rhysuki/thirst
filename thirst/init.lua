@@ -1,11 +1,16 @@
 local thirst = require("thirst.thirst")
 local expect = thirst.expect
-print("up'n'running")
 
-thirst.it("test", {
+thirst.section("examples")
+thirst.it("is as convenient as possible to write", {
 	expect.equals(1, 1),
-	expect.in_between(3, 5, 20),
-	expect.function_works(function() error(":( fuck my puppy life......no wet food") end)
+	expect.is_not_a(true, "number"),
+	expect.function_works(function() return math.floor(1.5) end)
 })
 
--- lust.finish()
+thirst.it("error examples", {
+	expect.equals(true, false),
+	expect.is_a(function() end, "boolean")
+})
+
+thirst.finish()
