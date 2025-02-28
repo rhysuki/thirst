@@ -1,10 +1,14 @@
----@class (exact) Test
+---@class (exact) Thirst_Test
 ---@field success boolean `true` if this Test ran with no errors.
 ---@field error_message string The error message that'll be displayed if this Test fails.
 ---@field source_line string The filename and line number this Test was created in.
 ---@field it_name string The name of the `it()` block this Test belongs to. Gets set in `it()` calls.
 
 local path = (...):gsub("thirst$", "")
+---@type Thirst_Common
+local common = require(path .. "common")
+---@type Thirst_Expect
+local expect = require(path .. "expect")
 local thirst = {
 	_VERSION = "v0.2.0",
 	_DESCRIPTION = "Smooth unit testing for Lua",
@@ -51,11 +55,11 @@ local thirst = {
 	before_functions = {},
 	after_functions = {},
 	errorring_tests = {},
-	---@type Expect
-	expect = require(path .. "expect"),
+	expect = expect,
 	---`true` if the last used section was an automatic section; If `true`, we should
 	---automatically clean up the last pushed section when starting a new one.
 	is_inside_auto_section = false,
+	create_test = common.create_test,
 }
 local red = string.char(27) .. "[31m"
 local green = string.char(27) .. "[32m"

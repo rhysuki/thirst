@@ -1,32 +1,23 @@
----@class Expect
+local path = (...):gsub("expect$", "")
+---@type Thirst_Common
+local common = require(path .. "common")
+---@class Thirst_Expect
 local expect = {}
-
 local str = tostring
+local create_test = common.create_test
 
----@param success boolean
----@param error_message string
----@return Test
-local function create_test(success, error_message)
-	return {
-		success = success,
-		error_message = error_message,
-		source_line = debug.traceback("", 2):match("%s([^%s]+%.lua:%d+:)"),
-		it_name = "",
-	}
-end
-
----Template for creating tests.
----@param test any
----@return Test
-function expect._base(test)
+---Boilerplate for creating tests.
+---@param arg any
+---@return Thirst_Test
+function expect._base(arg)
 	return create_test(
 		true,
-		""
+		"message"
 	)
 end
 
 ---Always succeeds. Useful when you don't have anything meaningful to test yet.
----@return Test
+---@return Thirst_Test
 function expect.pass()
 	return create_test(
 		true,
@@ -35,7 +26,7 @@ function expect.pass()
 end
 
 ---Always fails. Useful when you don't have anything meaningful to test yet.
----@return Test
+---@return Thirst_Test
 function expect.fail()
 	return create_test(
 		false,
@@ -45,7 +36,7 @@ end
 
 ---Succeeds if `value ~= nil`.
 ---@param value any
----@return Test
+---@return Thirst_Test
 function expect.exists(value)
 	return create_test(
 		value ~= nil,
@@ -55,7 +46,7 @@ end
 
 ---Succeeds if `value == nil`.
 ---@param value any
----@return Test
+---@return Thirst_Test
 function expect.does_not_exist(value)
 	return create_test(
 		value == nil,
@@ -66,7 +57,7 @@ end
 ---Succeeds if `a == b`.
 ---@param a any
 ---@param b any
----@return Test
+---@return Thirst_Test
 function expect.equals(a, b)
 	return create_test(
 		a == b,
@@ -77,7 +68,7 @@ end
 ---Succeeds if `a ~= b`.
 ---@param a any
 ---@param b any
----@return Test
+---@return Thirst_Test
 function expect.not_equal(a, b)
 	return create_test(
 		a ~= b,
@@ -88,7 +79,7 @@ end
 ---Succeeds if `type(a) == b`.
 ---@param value any
 ---@param type_name string
----@return Test
+---@return Thirst_Test
 function expect.is_a(value, type_name)
 	return create_test(
 		type(value) == type_name,
@@ -99,7 +90,7 @@ end
 ---Succeeds if `type(a) ~= b`.
 ---@param value any
 ---@param type_name string
----@return Test
+---@return Thirst_Test
 function expect.is_not_a(value, type_name)
 	return create_test(
 		type(value) ~= type_name,
@@ -111,7 +102,7 @@ end
 ---to `func`.
 ---@param func function
 ---@param ... any
----@return Test
+---@return Thirst_Test
 function expect.function_works(func, ...)
 	local success, err = pcall(func, ...)
 
@@ -124,7 +115,7 @@ end
 ---Succeeds if `func` errors during execution. Extra args are passed to `func`.
 ---@param func function
 ---@param ... any
----@return Test
+---@return Thirst_Test
 function expect.function_fails(func, ...)
 	local success, err = pcall(func, ...)
 
@@ -137,7 +128,7 @@ end
 ---Succeeds if `tab` has an entry with value `value`.
 ---@param tab table
 ---@param value any
----@return Test
+---@return Thirst_Test
 function expect.contains(tab, value)
 	local success = false
 
@@ -157,7 +148,7 @@ end
 ---Succeeds if `tab` doesn't have any entries with value `value`.
 ---@param tab table
 ---@param value any
----@return Test
+---@return Thirst_Test
 function expect.does_not_contain(tab, value)
 	local success = true
 
@@ -176,7 +167,7 @@ end
 
 ---Succeeds if `tab` is completely empty.
 ---@param tab table
----@return Test
+---@return Thirst_Test
 function expect.is_empty(tab)
 	local count = 0
 
@@ -194,7 +185,7 @@ end
 
 ---Succeeds if `tab` has any non-nil entries.
 ---@param tab table
----@return Test
+---@return Thirst_Test
 function expect.is_not_empty(tab)
 	return create_test(
 		next(tab) ~= nil,
@@ -205,7 +196,7 @@ end
 ---Succeeds if `i > j`.
 ---@param i number
 ---@param j number
----@return Test
+---@return Thirst_Test
 function expect.greater_than(i, j)
 	return create_test(
 		i > j,
@@ -216,7 +207,7 @@ end
 ---Succeeds if `i < j`.
 ---@param i number
 ---@param j number
----@return Test
+---@return Thirst_Test
 function expect.lesser_than(i, j)
 	return create_test(
 		i < j,
@@ -227,7 +218,7 @@ end
 ---Succeeds if `i >= j`.
 ---@param i number
 ---@param j number
----@return Test
+---@return Thirst_Test
 function expect.greater_than_or_equal_to(i, j)
 	return create_test(
 		i >= j,
@@ -238,7 +229,7 @@ end
 ---Succeeds if `i <= j`.
 ---@param i number
 ---@param j number
----@return Test
+---@return Thirst_Test
 function expect.lesser_than_or_equal_to(i, j)
 	return create_test(
 		i >= j,
@@ -251,7 +242,7 @@ end
 ---@param n number
 ---@param low number
 ---@param high number
----@return Test
+---@return Thirst_Test
 function expect.in_between(n, low, high)
 	return create_test(
 		(n >= low) and (n <= high),
@@ -264,7 +255,7 @@ end
 ---@param n number
 ---@param low number
 ---@param high number
----@return Test
+---@return Thirst_Test
 function expect.not_in_between(n, low, high)
 	return create_test(
 		(n < low) or (n > high),
