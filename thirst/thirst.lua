@@ -115,17 +115,13 @@ local function run_folder(folder, exclude)
 		local path = folder .. "/" .. name
 		local file_type = love.filesystem.getInfo(path).type
 
-		if exclude and path:match(exclude) then
-			goto continue
+		if (not exclude) or (not path:match(exclude)) then
+			if file_type == "file" and name:match(".lua$") then
+				assert(love.filesystem.load(path))()
+			else
+				thirst.run_folder(path)
+			end
 		end
-
-		if file_type == "file" and name:match(".lua$") then
-			assert(love.filesystem.load(path))()
-		else
-			thirst.run_folder(path)
-		end
-
-		::continue::
 	end
 end
 
