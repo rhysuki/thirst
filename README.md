@@ -97,6 +97,15 @@ If `true`, the result of each test will be printed when it's executed.
 If `true`, a list of all errors that occurred while testing will be printed when calling `finish()`, at the bottom of the results section.
 
 ## Functions
+### `thirst.it(name: string, tests: table)`
+Run a new test (inside the current section, if any) and prints out results if `is_printing_enabled` is `true`. Calls before-functions before and after-functions after it runs.
+
+### `thirst.before(fn: function)`
+Add `fn` to be called before every `it` call in the current section and all sections nested inside it.
+
+### `thirst.after(fn: function)`
+Add `fn` to be called before after `it` call in the current section and all sections inside it.
+
 ### `thirst.section(name: string)`
 Create a group of tests that's automatically ended and cleaned up when the next one starts, or when you manually end it with `pop_section()`.
 
@@ -110,15 +119,6 @@ End the current section, clean up before and after functions, and move back to t
 ### `thirst.finish()`
 Pop all active sections, clean up internal state, and print some info about the entirety of the test suite so far.
 This is automatically called at the end of `run_folder()`.
-
-### `thirst.it(name: string, tests: table)`
-Run a new test (inside the current section, if any) and prints out results if `is_printing_enabled` is `true`. Calls before-functions before and after-functions after it runs.
-
-### `thirst.before(fn: function)`
-Add `fn` to be called before every `it` call in the current section and all sections nested inside it.
-
-### `thirst.after(fn: function)`
-Add `fn` to be called before after `it` call in the current section and all sections inside it.
 
 ### `thirst.spy(target, name, run): table`
 Watch a function to track the number of times it was called, and the arguments it was called with. This returns a table containing one table for every time the function was called, with the arguements used inside it.
