@@ -1,8 +1,8 @@
----@class (exact) Thirst_Test
----@field success boolean `true` if this Test ran with no errors.
----@field error_message string The error message that'll be displayed if this Test fails.
----@field source_line string The filename and line number this Test was created in.
----@field it_name string The name of the `it()` block this Test belongs to. Gets set in `it()` calls.
+---@class (exact) Thirst_Assertion
+---@field success boolean `true` if this Assertion ran with no errors.
+---@field error_message string The error message that'll be displayed if this Assertion fails.
+---@field source_line string The filename and line number this Assertion was created in.
+---@field it_name string The name of the `it()` block this Assertion belongs to. Gets set in `it()` calls.
 
 local path = (...):gsub("thirst$", "")
 ---@type Thirst_Common
@@ -54,12 +54,12 @@ local thirst = {
 	errors = 0,
 	before_functions = {},
 	after_functions = {},
-	errorring_tests = {},
+	errorring_assertions = {},
 	expect = expect,
 	---`true` if the last used section was an automatic section; If `true`, we should
 	---automatically clean up the last pushed section when starting a new one.
 	is_inside_auto_section = false,
-	create_test = common.create_test,
+	create_assertion = common.create_assertion,
 }
 local red = string.char(27) .. "[31m"
 local green = string.char(27) .. "[32m"
@@ -96,18 +96,18 @@ local function clean_up_auto_section()
 	end
 end
 
----If any of the tests inside `tests` failed, return `false` and a table containing
----only the errorring tests. Otherwise, return `true` and an empty table.
----@param tests table
+---If any of the Assertions inside `assertions` failed, return `false` and a table
+---containing only the errorring Assertions. Otherwise, return `true` and an empty table.
+---@param assertions table
 ---@return boolean, table
-local function check_tests(tests)
-	local erroring_tests = {}
+local function check_assertions(assertions)
+	local erroring_assertions = {}
 
-	for _, test in ipairs(tests) do
-		if not test.success then table.insert(erroring_tests, test) end
+	for _, assertion in ipairs(assertions) do
+		if not assertion.success then table.insert(erroring_assertions, assertion) end
 	end
 
-	return #erroring_tests == 0, erroring_tests
+	return #erroring_assertions == 0, erroring_assertions
 end
 
 ---Recursively execute every Lua file inside `folder` and all nested folders, except
@@ -137,8 +137,8 @@ end
 ---`is_printing_enabled` is `true`. Calls before-functions before and after-functions
 ---after it runs.
 ---@param name string
----@param tests table
-function thirst.it(name, tests)
+---@param assertions table
+function thirst.it(name, assertions)
 	for level = 1, thirst.level do
 		if thirst.before_functions[level] then
 			for i = 1, #thirst.before_functions[level] do
@@ -147,7 +147,7 @@ function thirst.it(name, tests)
 		end
 	end
 
-	local success, erroring_tests = check_tests(tests)
+	local success, erroring_assertions = check_assertions(assertions)
 
 	if success then
 		thirst.passes = thirst.passes + 1
@@ -161,14 +161,14 @@ function thirst.it(name, tests)
 
 		print(get_indent() .. get_colored_text(color, label) .. " " .. name)
 
-		for _, test in ipairs(erroring_tests) do
-			print(get_indent(thirst.level + 1) .. test.source_line .. " " .. test.error_message)
+		for _, assertion in ipairs(erroring_assertions) do
+			print(get_indent(thirst.level + 1) .. assertion.source_line .. " " .. assertion.error_message)
 		end
 	end
 
-	for _, test in ipairs(erroring_tests) do
-		test.it_name = name
-		table.insert(thirst.errorring_tests, test)
+	for _, assertion in ipairs(erroring_assertions) do
+		assertion.it_name = name
+		table.insert(thirst.errorring_assertions, assertion)
 	end
 
 	for level = 1, thirst.level do
@@ -249,11 +249,11 @@ function thirst.finish()
 	if thirst.is_print_errors_on_finish_enabled then
 		print()
 
-		for _, test in ipairs(thirst.errorring_tests) do
+		for _, assertion in ipairs(thirst.errorring_assertions) do
 			print(get_colored_text(red, ("On '%s': %s %s"):format(
-				test.it_name,
-				test.source_line,
-				test.error_message
+				assertion.it_name,
+				assertion.source_line,
+				assertion.error_message
 			)))
 		end
 

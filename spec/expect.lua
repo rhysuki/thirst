@@ -261,3 +261,64 @@ it("errors with invalid data", {
 	expect.function_fails(expect.not_in_between, 10, "string", 10),
 	expect.function_fails(expect.not_in_between, 10, true, 10),
 })
+
+section("shallow_equals")
+do
+	local tab = {10, 20, 30}
+	it("succeeds with correct data", {
+		test_expect_outcome(expect.shallow_equals, true, {}, {}),
+		test_expect_outcome(expect.shallow_equals, true, {10, 10}, {10, 10}),
+		test_expect_outcome(expect.shallow_equals, true, {"string", a = 10, b = 20}, {"string", a = 10, b = 20}),
+		test_expect_outcome(expect.shallow_equals, true, {tab}, {tab}),
+	})
+end
+
+it("fails with mismatching data", {
+	test_expect_outcome(expect.shallow_equals, false, {10}, {20}),
+	test_expect_outcome(expect.shallow_equals, false, {a = false}, {a = true}),
+	test_expect_outcome(expect.shallow_equals, false, {1, 2, 3}, {1, 2, 3, 4}),
+	test_expect_outcome(expect.shallow_equals, false, {1, 2, 3, 4}, {1, 2, 3}),
+	test_expect_outcome(expect.shallow_equals, false, {a = 1, b = 2}, {a = 1, b = 2, c = 3}),
+})
+
+it("fails with different nested tables", {
+	test_expect_outcome(expect.shallow_equals, false, {{}}, {{}})
+})
+
+section("deep_equals")
+do
+	local tab = {10, 20, 30}
+	it("succeeds with correct shallow data", {
+		test_expect_outcome(expect.deep_equals, true, {}, {}),
+		test_expect_outcome(expect.deep_equals, true, {10, 10}, {10, 10}),
+		test_expect_outcome(expect.deep_equals, true, {"string", a = 10, b = 20}, {"string", a = 10, b = 20}),
+		test_expect_outcome(expect.deep_equals, true, {tab}, {tab}),
+	})
+end
+
+it("succeeds with correct deep data", {
+	test_expect_outcome(expect.deep_equals, true, {{10, 20, 30}, 10}, {{10, 20, 30}, 10}),
+	test_expect_outcome(expect.deep_equals, true, {"string", "string", {"s", "s"}}, {"string", "string", {"s", "s"}}),
+	test_expect_outcome(expect.deep_equals, true, {{{true}}}, {{{true}}}),
+})
+
+it("fails with incorrect shallow data", {
+	test_expect_outcome(expect.deep_equals, false, {10}, {20}),
+	test_expect_outcome(expect.deep_equals, false, {a = false}, {a = true}),
+	test_expect_outcome(expect.deep_equals, false, {1, 2, 3}, {1, 2, 3, 4}),
+	test_expect_outcome(expect.deep_equals, false, {1, 2, 3, 4}, {1, 2, 3}),
+	test_expect_outcome(expect.deep_equals, false, {a = 1, b = 2}, {a = 1, b = 2, c = 3}),
+})
+
+it("fails with mismatching nested tables", {
+	test_expect_outcome(expect.deep_equals, false, {{10, 20, 999}, 10}, {{10, 20, 30}, 10}),
+	test_expect_outcome(expect.deep_equals, false, {{10, 20, 30}, 10}, {{10, 20, 30}, 999}),
+	test_expect_outcome(expect.deep_equals, false, {"string", "string", {"s", "saa"}}, {"string", "string", {"s", "s"}}),
+	test_expect_outcome(expect.deep_equals, false, {{{true}}}, {{{false}}}),
+})
+
+it("fails with wrong amounts of values", {
+	test_expect_outcome(expect.deep_equals, false, {{10, 20, 30}, 20, 30}, {{10, 20, 30}, 20}),
+	test_expect_outcome(expect.deep_equals, false, {{10, 20, 30}, 20}, {{10, 20, 30}, 20, 30}),
+	test_expect_outcome(expect.deep_equals, false, {{10, 20, 30, 40}, 10}, {{10, 20, 30}, 10}),
+})

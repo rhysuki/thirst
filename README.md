@@ -1,13 +1,28 @@
 # Thirst
-Thirst is a testing library for Lua, based on [Lust](https://github.com/bjornbytes/lust/), that seeks to remove as much of the boilerplate of writing tests as possible.
+Thirst is a testing library for Lua, based on [Lust](https://github.com/bjornbytes/lust/), that optimizes for ease of writing.
 
 The smoother it is to write tests, the more you'll want to do it, and the better off your codebase in the long run. This is especially important for weakly-typed, dynamic languages like Lua.
 
 <table>
 <tr>
-<td> Lust </td> <td> Thirst </td>
+<td> Thirst </td> <td> Lust </td>
 </tr>
 <tr>
+<td>
+
+```lua
+section("module")
+it("feature", {
+	expect.is_a(1, "number"),
+	expect.equals("a string", "a string")
+})
+
+it("other feature", {
+	expect.does_not_exist(unitialized_var)
+})
+```
+
+</td>
 <td>
 
 ```lua
@@ -25,30 +40,27 @@ end)
 ```
 
 </td>
-<td>
-
-```lua
-section("module")
-it("feature", {
-	expect.is_a(1, "number"),
-	expect.equals("a string", "a string")
-})
-
-it("other feature", {
-	expect.does_not_exist(unitialized_var)
-})
-```
-
-</td>
 </tr>
 </table>
+
+<div align="center">
+	<a href="/LICENSE.md">
+		<img alt="GitHub License" src="https://img.shields.io/github/license/rhysuki/thirst?style=for-the-badge">
+	</a>
+	<img alt="GitHub Release" src="https://img.shields.io/github/v/release/rhysuki/thirst?style=for-the-badge">
+	<img alt="Passing" src="https://img.shields.io/badge/passing-100%25-mediumseagreen?style=for-the-badge">
+	<br>
+	<a href="https://github.com/rhysuki/love-godot-base/releases/latest">
+		<img alt="What's new?" src="https://img.shields.io/badge/What's%20new%3F-red?style=for-the-badge">
+	</a>
+</div>
 
 # Usage
 Download the `/thirst` folder and `require` it.
 
-`thirst.section()` defines a new block of tests, and `thirst.it()` defines a test. Tests can be created with the various `thirst.expect` functions. You can then run your entire test suite folder at once with `thirst.run_folder()` (provided you're using LÖVE).
+`thirst.section()` defines a new block of tests, and `thirst.it()` defines a test with assertions inside. Assertions can be created with the various `thirst.expect` functions. You can then run your entire test suite folder at once with `thirst.run_folder()` (if you're using LÖVE).
 
-Here's a complete example:
+Complete example:
 
 ```lua
 -- spec/example_test.lua
@@ -102,7 +114,7 @@ If `true`, the result of each test will be printed when it's executed.
 If `true`, a list of all errors that occurred while testing will be printed when calling `finish()`, at the bottom of the results section.
 
 ## Functions
-### `thirst.it(name: string, tests: table)`
+### `thirst.it(name: string, assertions: table)`
 Run a new test (inside the current section, if any) and prints out results if `is_printing_enabled` is `true`. Calls before-functions before and after-functions after it runs.
 
 ### `thirst.before(fn: function)`
@@ -128,7 +140,7 @@ This is automatically called at the end of `run_folder()`.
 ### `thirst.spy(target, name, run): table`
 Watch a function to track the number of times it was called, and the arguments it was called with. This returns a table containing one table for every time the function was called, with the arguements used inside it.
 
-I'll be honest, I don't really understand this one. [Please check the lust docs for further examples.](https://github.com/bjornbytes/lust?tab=readme-ov-file#spies)
+I'll be honest, I don't really understand this one. [Please check the Lust docs for more info.](https://github.com/bjornbytes/lust?tab=readme-ov-file#spies)
 
 ### `thirst.run_folder(path: string, exclude: string?)`
 * `path` - The path to the folder. This gets passed to `love.filesystem.getDirectoryItems()`.
