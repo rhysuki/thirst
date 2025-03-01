@@ -9,6 +9,7 @@ local function test_expect_outcome(fn, outcome, ...)
 end
 
 push_section("expect")
+
 section("pass")
 it("succeeds", {
 	test_expect_outcome(expect.pass, true)

@@ -78,7 +78,7 @@ function expect.not_equal(a, b)
 	)
 end
 
----Succeeds if `type(a) == b`.
+---Succeeds if `type(value) == type_name`.
 ---@param value any
 ---@param type_name string
 ---@return Thirst_Assertion
@@ -89,7 +89,7 @@ function expect.is_a(value, type_name)
 	)
 end
 
----Succeeds if `type(a) ~= b`.
+---Succeeds if `type(value) ~= type_name`.
 ---@param value any
 ---@param type_name string
 ---@return Thirst_Assertion
@@ -197,8 +197,7 @@ function expect.is_not_empty(tab)
 end
 
 ---Succeeds if `t1` and `t2` have the same exact elements, but doesn't check inside
----any nested tables. (Mind values are compared by equality, so two empty tables
----are different if they're different tables).
+---any nested tables. (Note: values are compared by equality, so `{} == {}` is `false`.
 ---@param t1 table
 ---@param t2 table
 function expect.shallow_equals(t1, t2)
@@ -223,17 +222,6 @@ function expect.greater_than(i, j)
 	)
 end
 
----Succeeds if `i < j`.
----@param i number
----@param j number
----@return Thirst_Assertion
-function expect.lesser_than(i, j)
-	return create_test(
-		i < j,
-		("Expected %d to be lesser than %d."):format(i, j)
-	)
-end
-
 ---Succeeds if `i >= j`.
 ---@param i number
 ---@param j number
@@ -242,6 +230,17 @@ function expect.greater_than_or_equal_to(i, j)
 	return create_test(
 		i >= j,
 		("Expected %d to be greater than or equal to %d."):format(i, j)
+	)
+end
+
+---Succeeds if `i < j`.
+---@param i number
+---@param j number
+---@return Thirst_Assertion
+function expect.lesser_than(i, j)
+	return create_test(
+		i < j,
+		("Expected %d to be lesser than %d."):format(i, j)
 	)
 end
 
@@ -269,7 +268,7 @@ function expect.in_between(n, low, high)
 	)
 end
 
----Succeeds if `n` exists outside the range of `low` and `high`, inclusive. This
+---Succeeds if `n` exists outside the range of `low` to `high`, inclusive. This
 ---is equivalent to (n < low) or (n > high).
 ---@param n number
 ---@param low number
