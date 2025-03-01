@@ -1,1 +1,1 @@
-return require(... .. '.thirst')
+return require(... .. ".thirst")
