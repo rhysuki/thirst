@@ -1,12 +1,11 @@
 # Thirst
 Thirst is a testing library for Lua, based on [Lust](https://github.com/bjornbytes/lust/), that optimizes for ease of writing.
 
-The smoother it is to write tests, the more you'll want to do it, and the better off your codebase in the long run. This is especially important for weakly-typed, dynamic languages like Lua.
+The smoother it is to write tests, the more you'll want to do it, and the better off your codebase will be in the long run. This is especially important for weakly-typed, dynamic languages like Lua.
 
 <div align="center">
 	<a href="/LICENSE.md">
-		<img alt="GitHub License" src="https://img.shields.io/github/license/rhysuki/thirst?style=for-the-badge">
-	</a>
+		<img alt="GitHub License" src="https://img.shields.io/github/license/rhysuki/thirst?style=for-the-badge"></a>
 	<img alt="GitHub Release" src="https://img.shields.io/github/v/release/rhysuki/thirst?style=for-the-badge">
 	<img alt="Passing" src="https://img.shields.io/badge/passing-100%25-mediumseagreen?style=for-the-badge">
 	<br>
@@ -46,14 +45,14 @@ thirst.run_folder("spec")
 ```
 
 Output:
-%%
+
 ```
 examples
         [PASS] is as convenient as possible to write
         [FAIL] error examples
                 spec/example_test.lua:12: Expected 'true' and 'false' to be equal.
-                spec/example_test.lua:13: Expected 'function: 00B0D908' to be a boolean, but it was a function.
-                spec/example_test.lua:14: Tables had mismatched values on key [3]: '30' vs '40'
+                spec/example_test.lua:13: Expected 'function: 0x01a304564480' to be a boolean, but it was a function.
+                spec/example_test.lua:14: Tables had mismatched values on key [3]: '30' vs '999'
 ==============================
 PASSES: 1
 FAILS: 1
@@ -61,9 +60,7 @@ Coverage: 50.0%
 [++++++++++++++--------------]
 ==============================
 ```
-%%
 
-![[Pasted image 20250301105823.png]]
 # API
 ## Fields
 ### `thirst.is_color_enabled: boolean = true`
