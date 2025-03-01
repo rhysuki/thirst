@@ -9,7 +9,7 @@ The smoother it is to write tests, the more you'll want to do it, and the better
 	<img alt="GitHub Release" src="https://img.shields.io/github/v/release/rhysuki/thirst?style=for-the-badge">
 	<img alt="Passing" src="https://img.shields.io/badge/passing-100%25-mediumseagreen?style=for-the-badge">
 	<br>
-	<a href="https://github.com/rhysuki/love-godot-base/releases/latest">
+	<a href="https://github.com/rhysuki/thirst/releases/latest">
 		<img alt="What's new?" src="https://img.shields.io/badge/What's%20new%3F-red?style=for-the-badge">
 	</a>
 </div>
