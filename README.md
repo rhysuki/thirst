@@ -4,7 +4,7 @@ Thirst is a testing library for Lua, based on [Lust](https://github.com/bjornbyt
 The smoother it is to write tests, the more you'll want to do it, and the better off your codebase will be in the long run. This is especially important for weakly-typed, dynamic languages like Lua.
 
 <div align="center">
-	<a href="/LICENSE.md">
+	<a href="/LICENSE">
 		<img alt="GitHub License" src="https://img.shields.io/github/license/rhysuki/thirst?style=for-the-badge"></a>
 	<img alt="GitHub Release" src="https://img.shields.io/github/v/release/rhysuki/thirst?style=for-the-badge">
 	<img alt="Passing" src="https://img.shields.io/badge/passing-100%25-mediumseagreen?style=for-the-badge">
