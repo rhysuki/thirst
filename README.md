@@ -77,13 +77,14 @@ If `true`, a list of all errors that occurred while testing will be printed when
 
 ## Functions
 ### `thirst.it(name: string, assertions: table)`
-Run a new test (inside the current section, if any) and prints out results if `is_printing_enabled` is `true`. Calls before-functions before and after-functions after it runs.
+Run a new test (inside the current section, if any) and print out results if `is_printing_enabled` is `true`. Calls all
+"before" functions before it runs and "after" functions after it runs.
 
 ### `thirst.before(fn: function)`
-Add `fn` to be called before every `it` call in the current section and all sections nested inside it.
+Add `fn` to be called before every `it` call in the current section and all sections inside it.
 
 ### `thirst.after(fn: function)`
-Add `fn` to be called before after `it` call in the current section and all sections inside it.
+Add `fn` to be called after every `it` call in the current section and all sections inside it.
 
 ### `thirst.section(name: string)`
 Create a group of tests that's automatically ended and cleaned up when the next one starts, or when you manually end it with `pop_section()`.
@@ -117,7 +118,9 @@ Create a new Thirst-compatible assertion result table, to put inside tests. `suc
 
 This can be used to make custom assertions; see [expect.lua](/thirst/expect.lua) for examples.
 ## Assertions
-These are all part of the `expect` table, included in `thirst.expect`, and all return Assertions (return values omitted in these docs for brevity). You can also make custom assertions with `thirst.create_assertion()`.
+These are all part of the `expect` table, included in `thirst.expect`. You can also make custom assertions with `thirst.create_assertion()`.
+
+Note: All of them return a Thirst Assertion, but the return values were omitted for brevity.
 
 ### `expect.pass()`
 Always succeeds. Useful when you don't have anything meaningful to test yet.
@@ -183,7 +186,7 @@ Succeeds if `i <= j`.
 Succeeds if `n` is between `low` and `high`, inclusive. This is equivalent to `(n >= low) and (n <= high)`.
 
 ### `expect.not_in_between(n: number, low: number, high: number)`
-Succeeds if `n` exists outside the range of `low` to `high`, inclusive. This is equivalent to (n < low) or (n > high).
+Succeeds if `n` exists outside the range of `low` to `high`, inclusive. This is equivalent to `(n < low) or (n > high)`.
 # Contributing
 This library's still in its infancy; issues regarding missing/lacking features, suggestions and improvements are always welcome.
 

@@ -269,7 +269,7 @@ function expect.in_between(n, low, high)
 end
 
 ---Succeeds if `n` exists outside the range of `low` to `high`, inclusive. This
----is equivalent to (n < low) or (n > high).
+---is equivalent to `(n < low) or (n > high)`.
 ---@param n number
 ---@param low number
 ---@param high number
